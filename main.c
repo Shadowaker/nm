@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "ft_nm.h"
 
 int body(char *path)
@@ -8,6 +9,12 @@ int body(char *path)
 
     if (load_file(path, &elf))
     {
+        free(elf.buf);
+        return (1);
+    }
+    if (!check_ident(&elf))
+    {
+        fprintf(stderr, "ft_nm: %s: file format not recognized\n", path);
         free(elf.buf);
         return (1);
     }
