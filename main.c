@@ -15,7 +15,7 @@ int body(char *path)
     }
 
     elf_class = check_ident(&elf);
-    if (elf_class == 0 || !read_ehdr(&elf, elf_class))
+    if (elf_class == 0 || !read_ehdr(&elf, elf_class) || !check_shdr_table(&elf))
     {
         fprintf(stderr, "ft_nm: %s: file format not recognized\n", path);
         free(elf.buf);
