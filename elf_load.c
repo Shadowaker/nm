@@ -40,10 +40,8 @@ int load_file(char *path, t_elf *elf)
         return (1);
     }
 
-    elf->orig_size = (size_t) size;
     elf->size = (size_t) size;
-    elf->capacity = (size_t) size + 2 * 4096 + 0x10000; // MAGIC NUMBERS GO BRRRRRRR
-    elf->buf = malloc(elf->capacity);
+    elf->buf = malloc(elf->size);
     if (!elf->buf)
     {
         print_sys_error(path);

@@ -10,14 +10,9 @@ typedef struct s_elf {
 
     uint8_t		*buf;
     size_t		size;
-	size_t		capacity;
-	size_t		orig_size;
 
-
-    Elf64_Ehdr  *ehdr;
-    Elf64_Phdr  *phdr;
-
-    int         is_pie;
+    Elf64_Ehdr  ehdr;
+    int         is_64;
 }   t_elf;
 
 /* elf_load.c */
@@ -27,5 +22,6 @@ int load_file(char *path, t_elf *elf);
 const void  *elf_ptr(const t_elf *elf, uint64_t off, uint64_t len);
 const void  *elf_table(const t_elf *elf, uint64_t off, uint64_t count, uint64_t entsize);
 int         check_ident(const t_elf *elf);
+int         read_ehdr(t_elf *elf, int elf_class);
 
 #endif

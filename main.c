@@ -6,18 +6,22 @@
 int body(char *path)
 {
     t_elf   elf;
+    int     elf_class;
 
     if (load_file(path, &elf))
     {
         free(elf.buf);
         return (1);
     }
-    if (!check_ident(&elf))
+
+    elf_class = check_ident(&elf);
+    if (elf_class == 0 || !read_ehdr(&elf, elf_class))
     {
         fprintf(stderr, "ft_nm: %s: file format not recognized\n", path);
         free(elf.buf);
         return (1);
     }
+    
     free(elf.buf);
 
     return (0);
