@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,6 +18,29 @@ static void print_sys_error(char *path)
     perror(path);
 }
 
+/*
+    It returns 1 on invalid
+*/
+static int  check_file(const char *path)
+{
+    struct stat st;
+
+    if (stat(path, &st) < 0)
+    {
+        if (errno == ENOENT)
+            fprintf(stderr, "ft_nm: '%s': No such file\n", path);
+        else
+            fprintf(stderr, "ft_nm: Warning: could not locate '%s'.  reason: %s\n",
+                path, strerror(errno));
+        return (1);
+    }
+    if (S_ISDIR(st.st_mode))
+        fprintf(stderr, "ft_nm: Warning: '%s' is a directory\n", path);
+    else if (!S_ISREG(st.st_mode))
+        fprintf(stderr, "ft_nm: Warning: '%s' is not an ordinary file\n", path);
+    return (!S_ISREG(st.st_mode) || st.st_size == 0);
+}
+
 int load_file(char *path, t_elf *elf)
 {
     int     fd;
@@ -25,6 +49,9 @@ int load_file(char *path, t_elf *elf)
     size_t  off;
 
     memset(elf, 0, sizeof(*elf));
+    fflush(stdout);     // the previous files' output comes before any error below
+    if (check_file(path))
+        return (1);
     fd = open(path, O_RDONLY);
     if (fd < 0)
     {
