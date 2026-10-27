@@ -17,6 +17,26 @@ const void  *elf_table(const t_elf *elf, uint64_t off, uint64_t count, uint64_t 
 }
 
 /*
+    Returns string index of a string table, NULL when the table 
+    is outside the file or not '\0'-terminated. 
+    Index 0 is always "", even if no table is present.
+*/
+const char  *elf_str(const t_elf *elf, const Elf64_Shdr *strtab, uint64_t idx)
+{
+    const char  *str;
+
+    if (idx == 0)
+        return ("");
+    
+    str = elf_ptr(elf, strtab->sh_offset, strtab->sh_size);
+    if (str == NULL || idx >= strtab->sh_size
+        || str[strtab->sh_size - 1] != '\0')
+        return (NULL);
+    
+    return (str + idx);
+}
+
+/*
     Check if the class identity is right.
     It returns 0 on invalid
 */
@@ -184,8 +204,7 @@ static int  links_are_valid(const t_elf *elf, const Elf64_Shdr *sh)
 }
 
 /*
-    A bad link is invalid, a section outside the file is only a
-    warning, the first SHT_SYMTAB wins. 
+    A bad link is invalid, a section outside the file is only a warning.
     It returns 0 on invalid
 */
 int check_sections(t_elf *elf)
@@ -200,6 +219,25 @@ int check_sections(t_elf *elf)
             return (0);
         if (sh.sh_type != SHT_NOBITS && !elf_ptr(elf, sh.sh_offset, sh.sh_size))
             elf->warnings |= W_PAST_EOF;
+        i++;
+    }
+    return (1);
+}
+
+/*
+    The name must resolve, then the first SHT_SYMTAB wins.
+    It returns 0 on invalid
+*/
+static int  scan_sections(t_elf *elf, const Elf64_Shdr *shstrtab)
+{
+    Elf64_Shdr  sh;
+    uint64_t    i;
+
+    i = 1;
+    while (i < elf->shnum)
+    {
+        if (!read_shdr(elf, i, &sh) || !elf_str(elf, shstrtab, sh.sh_name))
+            return (0);
         if (sh.sh_type == SHT_SYMTAB && elf->symtab_idx == 0)
             elf->symtab_idx = i;
         else if (sh.sh_type == SHT_SYMTAB && elf->ignored_symtab == 0)
@@ -210,6 +248,27 @@ int check_sections(t_elf *elf)
         i++;
     }
     return (1);
+}
+
+/*
+    A bad e_shstrndx is only a warning.
+    Index 0 also means no sections, but without the warning
+*/
+t_status    check_shstrtab(t_elf *elf)
+{
+    Elf64_Shdr  shstrtab;
+
+    if (elf->shstrndx >= elf->shnum || !read_shdr(elf, elf->shstrndx, &shstrtab)
+        || shstrtab.sh_type != SHT_STRTAB)
+    {
+        elf->warnings |= W_SHSTRNDX;
+        return (NM_NO_SYMBOLS);
+    }
+    if (elf->shstrndx == 0)
+        return (NM_NO_SYMBOLS);
+    if (!scan_sections(elf, &shstrtab))
+        return (NM_FORMAT);
+    return (NM_OK);
 }
 
 /*
@@ -224,5 +283,5 @@ t_status    validate_elf(t_elf *elf)
     if (elf_class == 0 || !read_ehdr(elf, elf_class) || !check_shdr_table(elf)
         || !check_sections(elf))
         return (NM_FORMAT);
-    return (NM_OK);
+    return (check_shstrtab(elf));
 }

@@ -44,11 +44,13 @@ int load_file(char *path, t_elf *elf);
 /* elf_validate.c */
 const void  *elf_ptr(const t_elf *elf, uint64_t off, uint64_t len);
 const void  *elf_table(const t_elf *elf, uint64_t off, uint64_t count, uint64_t entsize);
+const char  *elf_str(const t_elf *elf, const Elf64_Shdr *strtab, uint64_t idx);
 int         check_ident(const t_elf *elf);
 int         read_ehdr(t_elf *elf, int elf_class);
 int         read_shdr(const t_elf *elf, uint64_t idx, Elf64_Shdr *out);
 int         check_shdr_table(t_elf *elf);
 int         check_sections(t_elf *elf);
+t_status    check_shstrtab(t_elf *elf);
 t_status    validate_elf(t_elf *elf);
 
 /* elf_report.c */
