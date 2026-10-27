@@ -18,13 +18,15 @@ int body(char *path)
 
 int main(int argc, char **argv)
 {
+
     if (argc == 1)
-        return (body("a.out"), 1);
+        return (body("a.out"));
     else
     {
         for (int i = 1; i < argc; i++)
         {
-            return (body(argv[i]), 1);
+            if (body(argv[i]))
+                return (1);
         }
     }
 

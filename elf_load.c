@@ -43,6 +43,7 @@ int load_file(char *path, t_elf *elf)
         {
             close(fd);
             free(elf->buf);
+            elf->buf = NULL;
             return (fprintf(stderr, "ft_nm: read error\n"), 1);
         }
         if (r == 0)
@@ -54,6 +55,7 @@ int load_file(char *path, t_elf *elf)
     if (off != elf->size)
     {
         free(elf->buf);
+        elf->buf = NULL;
         return (fprintf(stderr, "ft_nm: unexpected end of file.\n"), 1);
     }
     return (0);
