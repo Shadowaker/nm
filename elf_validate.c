@@ -224,6 +224,34 @@ int check_sections(t_elf *elf)
     return (1);
 }
 
+static size_t   sym_size(const t_elf *elf)
+{
+    if (elf->is_64)
+        return (sizeof(Elf64_Sym));
+    return (sizeof(Elf32_Sym));
+}
+
+/*
+    Every SHT_SYMTAB needs entries of the right size, and sh_info 
+    inside it unless it is empty. The first one wins.
+    It returns 0 on invalid
+*/
+static int  pick_symtab(t_elf *elf, const Elf64_Shdr *sh, uint64_t i)
+{
+    if (sh->sh_entsize != sym_size(elf))
+        return (0);
+    if (sh->sh_size != 0 && sh->sh_info * sh->sh_entsize > sh->sh_size)
+        return (0);
+    if (elf->symtab_idx == 0)
+        elf->symtab_idx = i;
+    else if (elf->ignored_symtab == 0)
+    {
+        elf->warnings |= W_MULTI_SYMTAB;
+        elf->ignored_symtab = i;
+    }
+    return (1);
+}
+
 /*
     The name must resolve, then the first SHT_SYMTAB wins.
     It returns 0 on invalid
@@ -238,13 +266,8 @@ static int  scan_sections(t_elf *elf, const Elf64_Shdr *shstrtab)
     {
         if (!read_shdr(elf, i, &sh) || !elf_str(elf, shstrtab, sh.sh_name))
             return (0);
-        if (sh.sh_type == SHT_SYMTAB && elf->symtab_idx == 0)
-            elf->symtab_idx = i;
-        else if (sh.sh_type == SHT_SYMTAB && elf->ignored_symtab == 0)
-        {
-            elf->warnings |= W_MULTI_SYMTAB;
-            elf->ignored_symtab = i;
-        }
+        if (sh.sh_type == SHT_SYMTAB && !pick_symtab(elf, &sh, i))
+            return (0);
         i++;
     }
     return (1);
@@ -272,16 +295,41 @@ t_status    check_shstrtab(t_elf *elf)
 }
 
 /*
+    With no entry it reads nothing, otherwise entries outside 
+    the file are fatal
+*/
+t_status    check_symtab(t_elf *elf)
+{
+    Elf64_Shdr  sh;
+    uint64_t    count;
+
+    if (elf->symtab_idx == 0 || !read_shdr(elf, elf->symtab_idx, &sh))
+        return (NM_NO_SYMBOLS);
+    count = sh.sh_size / sh.sh_entsize;
+    if (count == 0)
+        return (NM_NO_SYMBOLS);
+    if (!elf_table(elf, sh.sh_offset, count, sh.sh_entsize))
+        return (NM_SYMTAB_PAST_EOF);
+    if (count == 1)
+        return (NM_NO_SYMBOLS);
+    return (NM_OK);
+}
+
+/*
     Runs every check in order, each one only reads what the previous ones
     proved is inside the file
 */
 t_status    validate_elf(t_elf *elf)
 {
-    int elf_class;
+    int         elf_class;
+    t_status    status;
 
     elf_class = check_ident(elf);
     if (elf_class == 0 || !read_ehdr(elf, elf_class) || !check_shdr_table(elf)
         || !check_sections(elf))
         return (NM_FORMAT);
-    return (check_shstrtab(elf));
+    status = check_shstrtab(elf);
+    if (status != NM_OK)
+        return (status);
+    return (check_symtab(elf));
 }

@@ -51,6 +51,7 @@ int         read_shdr(const t_elf *elf, uint64_t idx, Elf64_Shdr *out);
 int         check_shdr_table(t_elf *elf);
 int         check_sections(t_elf *elf);
 t_status    check_shstrtab(t_elf *elf);
+t_status    check_symtab(t_elf *elf);
 t_status    validate_elf(t_elf *elf);
 
 /* elf_report.c */
