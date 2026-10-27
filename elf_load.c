@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -5,6 +6,16 @@
 #include <stdio.h>
 #include "ft_nm.h"
 
+
+static void print_sys_error(char *path)
+{
+    int err;
+
+    err = errno;
+    fputs("ft_nm: ", stderr);
+    errno = err;
+    perror(path);
+}
 
 int load_file(char *path, t_elf *elf)
 {
@@ -16,13 +27,17 @@ int load_file(char *path, t_elf *elf)
     memset(elf, 0, sizeof(*elf));
     fd = open(path, O_RDONLY);
     if (fd < 0)
-        return (fprintf(stderr, "ft_nm: %s: file format not recognized\n", path), 1);
+    {
+        print_sys_error(path);
+        return (1);
+    }
 
     size = lseek(fd, 0, SEEK_END);
     if (size < 0 || lseek(fd, 0, SEEK_SET) < 0)
     {
+        print_sys_error(path);
         close(fd);
-        return (fprintf(stderr, "ft_nm: lseek error\n"), 1);
+        return (1);
     }
 
     elf->orig_size = (size_t) size;
@@ -31,8 +46,9 @@ int load_file(char *path, t_elf *elf)
     elf->buf = malloc(elf->capacity);
     if (!elf->buf)
     {
+        print_sys_error(path);
         close(fd);
-        return (fprintf(stderr, "ft_nm: malloc error\n"), 1);
+        return (1);
     }
 
     off = 0;
@@ -41,10 +57,11 @@ int load_file(char *path, t_elf *elf)
         r = read(fd, elf->buf + off, elf->size - off);
         if (r < 0)
         {
+            print_sys_error(path);
             close(fd);
             free(elf->buf);
             elf->buf = NULL;
-            return (fprintf(stderr, "ft_nm: read error\n"), 1);
+            return (1);
         }
         if (r == 0)
             break ;
