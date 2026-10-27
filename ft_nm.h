@@ -20,6 +20,11 @@ typedef struct s_elf {
     int         is_pie;
 }   t_elf;
 
+/* elf_load.c */
 int load_file(char *path, t_elf *elf);
+
+/* elf_validate.c */
+const void  *elf_ptr(const t_elf *elf, uint64_t off, uint64_t len);
+const void  *elf_table(const t_elf *elf, uint64_t off, uint64_t count, uint64_t entsize);
 
 #endif
