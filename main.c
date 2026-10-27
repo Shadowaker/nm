@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "ft_nm.h"
 
-int body(path)
+int body(char *path)
 {
     t_elf   elf;
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     {
         for (int i = 0; i < argc; i++)
         {
-            return (body(argv[i + 1]), 1);
+            return (body(argv[i]), 1);
         }
     }
 
