@@ -8,8 +8,10 @@ int body(char *path)
 
     if (load_file(path, &elf))
     {
+        free(elf.buf);
         return (1);
     }
+    free(elf.buf);
 
     return (0);
 }
@@ -20,7 +22,7 @@ int main(int argc, char **argv)
         return (body("a.out"), 1);
     else
     {
-        for (int i = 0; i < argc; i++)
+        for (int i = 1; i < argc; i++)
         {
             return (body(argv[i]), 1);
         }
