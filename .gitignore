@@ -1,0 +1,12 @@
+.idea
+.vi
+.vscode
+.code
+
+.env
+*.env
+*.o
+
+a.out
+nm
+ft_nm
