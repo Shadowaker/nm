@@ -2,7 +2,7 @@ NAME    = ft_nm
 CC      = cc
 CFLAGS  = -Wall -Wextra -Werror
 
-SRCS    = main.c elf_load.c elf_validate.c
+SRCS    = main.c elf_load.c elf_validate.c elf_report.c
 OBJS    = $(SRCS:.c=.o)
 
 all: $(NAME)

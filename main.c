@@ -5,8 +5,8 @@
 
 int body(char *path)
 {
-    t_elf   elf;
-    int     elf_class;
+    t_elf       elf;
+    t_status    status;
 
     if (load_file(path, &elf))
     {
@@ -14,17 +14,12 @@ int body(char *path)
         return (1);
     }
 
-    elf_class = check_ident(&elf);
-    if (elf_class == 0 || !read_ehdr(&elf, elf_class) || !check_shdr_table(&elf))
-    {
-        fprintf(stderr, "ft_nm: %s: file format not recognized\n", path);
-        free(elf.buf);
-        return (1);
-    }
-    
+    status = validate_elf(&elf);
+    print_warnings(path, &elf);
+    print_status(path, status);
     free(elf.buf);
 
-    return (0);
+    return (status != NM_OK && status != NM_NO_SYMBOLS);
 }
 
 int main(int argc, char **argv)

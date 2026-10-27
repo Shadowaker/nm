@@ -171,3 +171,17 @@ int check_shdr_table(t_elf *elf)
         return (0);
     return (1);
 }
+
+/*
+    Runs every check in order: each one only reads what the previous ones
+    proved is inside the file
+*/
+t_status    validate_elf(t_elf *elf)
+{
+    int elf_class;
+
+    elf_class = check_ident(elf);
+    if (elf_class == 0 || !read_ehdr(elf, elf_class) || !check_shdr_table(elf))
+        return (NM_FORMAT);
+    return (NM_OK);
+}
