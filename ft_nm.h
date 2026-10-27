@@ -34,6 +34,7 @@ typedef struct s_elf {
     uint64_t    phnum;
 
     int         warnings;
+    uint64_t    symtab_idx;
     uint64_t    ignored_symtab;
 }   t_elf;
 
@@ -47,6 +48,7 @@ int         check_ident(const t_elf *elf);
 int         read_ehdr(t_elf *elf, int elf_class);
 int         read_shdr(const t_elf *elf, uint64_t idx, Elf64_Shdr *out);
 int         check_shdr_table(t_elf *elf);
+int         check_sections(t_elf *elf);
 t_status    validate_elf(t_elf *elf);
 
 /* elf_report.c */

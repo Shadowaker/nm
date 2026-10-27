@@ -128,9 +128,6 @@ int read_shdr(const t_elf *elf, uint64_t i, Elf64_Shdr *out)
     return (1);
 }
 
-/*
-    With 0xff00 sections or more, the real counts live in section header 0
-*/
 static int  resolve_extended(t_elf *elf)
 {
     Elf64_Shdr  sh0;
@@ -173,7 +170,50 @@ int check_shdr_table(t_elf *elf)
 }
 
 /*
-    Runs every check in order: each one only reads what the previous ones
+    sh_link must name an existing section, and so must sh_info when it is
+    an index
+*/
+static int  links_are_valid(const t_elf *elf, const Elf64_Shdr *sh)
+{
+    if (sh->sh_link >= elf->shnum)
+        return (0);
+    if (sh->sh_type != SHT_REL && sh->sh_type != SHT_RELA
+        && !(sh->sh_flags & SHF_INFO_LINK))
+        return (1);
+    return (sh->sh_info < elf->shnum);
+}
+
+/*
+    A bad link is invalid, a section outside the file is only a
+    warning, the first SHT_SYMTAB wins. 
+    It returns 0 on invalid
+*/
+int check_sections(t_elf *elf)
+{
+    Elf64_Shdr  sh;
+    uint64_t    i;
+
+    i = 1;
+    while (i < elf->shnum)
+    {
+        if (!read_shdr(elf, i, &sh) || !links_are_valid(elf, &sh))
+            return (0);
+        if (sh.sh_type != SHT_NOBITS && !elf_ptr(elf, sh.sh_offset, sh.sh_size))
+            elf->warnings |= W_PAST_EOF;
+        if (sh.sh_type == SHT_SYMTAB && elf->symtab_idx == 0)
+            elf->symtab_idx = i;
+        else if (sh.sh_type == SHT_SYMTAB && elf->ignored_symtab == 0)
+        {
+            elf->warnings |= W_MULTI_SYMTAB;
+            elf->ignored_symtab = i;
+        }
+        i++;
+    }
+    return (1);
+}
+
+/*
+    Runs every check in order, each one only reads what the previous ones
     proved is inside the file
 */
 t_status    validate_elf(t_elf *elf)
@@ -181,7 +221,8 @@ t_status    validate_elf(t_elf *elf)
     int elf_class;
 
     elf_class = check_ident(elf);
-    if (elf_class == 0 || !read_ehdr(elf, elf_class) || !check_shdr_table(elf))
+    if (elf_class == 0 || !read_ehdr(elf, elf_class) || !check_shdr_table(elf)
+        || !check_sections(elf))
         return (NM_FORMAT);
     return (NM_OK);
 }
