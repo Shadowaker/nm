@@ -20,7 +20,7 @@ TODO        := $(shell for s in $(SRCS); do o=$(OBJ_DIR)/$${s%.c}.o; \
 TOTAL       := $(words $(TODO))
 DONE        :=
 
-# $(call progress,file): counts one more file and redraws the bar, showing
+# $(call progress,file) counts one more file and redraws the bar, showing
 # the file just compiled, or "done" after the last one
 define progress
 $(eval DONE += x)total=$(TOTAL); done=$(words $(DONE)); [ $$total -ge $$done ] || total=$$done; \
