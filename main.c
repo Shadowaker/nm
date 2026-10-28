@@ -7,11 +7,33 @@
 /*
     It returns 0 on success, 1 on failure, -1 when nm would stop there
 */
-int body(char *path, int multi)
+int display_elf(t_elf *elf, const char *name, const char *warn_name,
+    const char *header)
 {
-    t_elf       elf;
     t_status    status;
     int         r;
+
+    status = validate_elf(elf);
+    print_warnings(warn_name, elf);
+    if (header != NULL && status != NM_FORMAT)
+        printf("\n%s:\n", header);
+    print_status(name, status);
+    r = 0;
+    if (status == NM_OK)
+        r = print_symbols(name, elf);
+
+    if (status == NM_SYMTAB_PAST_EOF || r < 0)
+        return (-1);
+    return (status == NM_FORMAT);
+}
+
+/*
+    It returns 0 on success, 1 on failure, -1 when nm would stop there
+*/
+int body(char *path, int multi)
+{
+    t_elf   elf;
+    int     r;
 
     if (load_file(path, &elf))
     {
@@ -19,19 +41,13 @@ int body(char *path, int multi)
         return (1);
     }
 
-    status = validate_elf(&elf);
-    print_warnings(path, &elf);
-    if (multi && status != NM_FORMAT)
-        printf("\n%s:\n", path);
-    print_status(path, status);
-    r = 0;
-    if (status == NM_OK)
-        r = print_symbols(path, &elf);
+    if (is_archive(&elf))
+        r = display_archive(path, &elf, multi);
+    else
+        r = display_elf(&elf, path, path, multi ? path : NULL);
     free(elf.buf);
 
-    if (status == NM_SYMTAB_PAST_EOF || r < 0)
-        return (-1);
-    return (status == NM_FORMAT);
+    return (r);
 }
 
 /*

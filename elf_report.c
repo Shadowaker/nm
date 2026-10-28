@@ -24,4 +24,6 @@ void    print_status(const char *path, t_status status)
         fprintf(stderr, "ft_nm: %s: file format not recognized\n", path);
     else if (status == NM_NO_SYMBOLS || status == NM_SYMTAB_PAST_EOF)
         fprintf(stderr, "ft_nm: %s: no symbols\n", path);
+    else if (status == NM_MALFORMED)
+        fprintf(stderr, "ft_nm: %s: malformed archive\n", path);
 }

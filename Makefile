@@ -2,7 +2,7 @@ NAME        = ft_nm
 CC          = cc
 CFLAGS      = -Wall -Wextra -Werror
 
-SRCS        = main.c elf_load.c elf_validate.c elf_report.c elf_symbols.c
+SRCS        = main.c elf_load.c elf_validate.c elf_report.c elf_symbols.c elf_archive.c
 HEADER      = ft_nm.h
 OBJ_DIR     = objs
 OBJS        = $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.o))

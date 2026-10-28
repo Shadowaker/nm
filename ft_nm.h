@@ -25,7 +25,8 @@ typedef enum e_status
     NM_OK,
     NM_FORMAT,
     NM_NO_SYMBOLS,
-    NM_SYMTAB_PAST_EOF      // nm handle this as a fatal
+    NM_SYMTAB_PAST_EOF,     // nm handle this as a fatal
+    NM_MALFORMED            // a broken archive member header
 }   t_status;
 
 
@@ -59,6 +60,41 @@ typedef struct s_sym
     char        type;
 }   t_sym;
 
+/* Archives: "!<arch>\n", then 60-byte headers each followed by its data */
+# define AR_MAGIC_SIZE      8
+# define AR_HDR_SIZE        60
+# define AR_NAME_MAX        15
+
+typedef enum e_next
+{
+    AR_MEMBER,
+    AR_END,
+    AR_MALFORMED,
+    AR_NOMEM
+}   t_next;
+
+typedef struct s_archive
+{
+    const char  *path;
+    t_elf       *file;
+    int         thin;           // "!<thin>\n": members are separate files
+    char        *names;         // the "//" long-name table, NULL if none
+    uint64_t    names_size;
+    uint64_t    first;          // offset of the first real member
+}   t_archive;
+
+typedef struct s_member
+{
+    char        hdr[AR_HDR_SIZE + 1];
+    char        *name;
+    uint64_t    data;
+    uint64_t    size;
+}   t_member;
+
+/* main.c */
+int         display_elf(t_elf *elf, const char *name, const char *warn_name,
+                const char *header);
+
 /* elf_load.c */
 int load_file(char *path, t_elf *elf);
 
@@ -81,5 +117,9 @@ void        print_status(const char *path, t_status status);
 
 /* elf_symbols.c */
 int         print_symbols(const char *path, const t_elf *elf);
+
+/* elf_archive.c */
+int         is_archive(const t_elf *file);
+int         display_archive(const char *path, t_elf *file, int multi);
 
 #endif
