@@ -13,6 +13,13 @@
 # define W_SHSTRNDX         2   // 010
 # define W_MULTI_SYMTAB     4   // 100
 
+/* 
+    x86-64 large common symbols 
+*/
+# ifndef SHN_X86_64_LCOMMON
+#  define SHN_X86_64_LCOMMON 0xff02
+# endif
+
 typedef enum e_status
 {
     NM_OK,
@@ -38,6 +45,20 @@ typedef struct s_elf {
     uint64_t    ignored_symtab;
 }   t_elf;
 
+typedef struct s_tables
+{
+    Elf64_Shdr  symtab;
+    Elf64_Shdr  strtab;
+    Elf64_Shdr  shstrtab;
+}   t_tables;
+
+typedef struct s_sym
+{
+    const char  *name;
+    uint64_t    value;
+    char        type;
+}   t_sym;
+
 /* elf_load.c */
 int load_file(char *path, t_elf *elf);
 
@@ -57,5 +78,8 @@ t_status    validate_elf(t_elf *elf);
 /* elf_report.c */
 void        print_warnings(const char *path, const t_elf *elf);
 void        print_status(const char *path, t_status status);
+
+/* elf_symbols.c */
+int         print_symbols(const char *path, const t_elf *elf);
 
 #endif

@@ -17,8 +17,8 @@ const void  *elf_table(const t_elf *elf, uint64_t off, uint64_t count, uint64_t 
 }
 
 /*
-    Returns string index of a string table, NULL when the table 
-    is outside the file or not '\0'-terminated. 
+    Returns string index of a string table, NULL when the table
+    is outside the file or not '\0'-terminated.
     Index 0 is always "", even if no table is present.
 */
 const char  *elf_str(const t_elf *elf, const Elf64_Shdr *strtab, uint64_t idx)
@@ -27,6 +27,8 @@ const char  *elf_str(const t_elf *elf, const Elf64_Shdr *strtab, uint64_t idx)
 
     if (idx == 0)
         return ("");
+    if (strtab->sh_type != SHT_STRTAB && strtab->sh_type < SHT_LOOS)
+        return (NULL);
     
     str = elf_ptr(elf, strtab->sh_offset, strtab->sh_size);
     if (str == NULL || idx >= strtab->sh_size

@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@ int body(char *path, int multi)
 {
     t_elf       elf;
     t_status    status;
+    int         r;
 
     if (load_file(path, &elf))
     {
@@ -22,9 +24,12 @@ int body(char *path, int multi)
     if (multi && status != NM_FORMAT)
         printf("\n%s:\n", path);
     print_status(path, status);
+    r = 0;
+    if (status == NM_OK)
+        r = print_symbols(path, &elf);
     free(elf.buf);
 
-    if (status == NM_SYMTAB_PAST_EOF)
+    if (status == NM_SYMTAB_PAST_EOF || r < 0)
         return (-1);
     return (status == NM_FORMAT);
 }
@@ -38,6 +43,8 @@ int main(int argc, char **argv)
     int failures;
     int r;
 
+    setlocale(LC_COLLATE, "");      // sorts names in the user's locale
+    setlocale(LC_CTYPE, "");
     if (argc == 1)
         return (body("a.out", 0) != 0);
     failures = 0;
