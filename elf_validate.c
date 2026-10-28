@@ -206,18 +206,19 @@ static int  links_are_valid(const t_elf *elf, const Elf64_Shdr *sh)
 }
 
 /*
-    A bad link is invalid, a section outside the file is only a warning.
-    It returns 0 on invalid
+    A bad link is invalid, a section outside the file is only a warning,
+    section 0 included.
+    It returns 0 on invalid.
 */
 int check_sections(t_elf *elf)
 {
     Elf64_Shdr  sh;
     uint64_t    i;
 
-    i = 1;
+    i = 0;
     while (i < elf->shnum)
     {
-        if (!read_shdr(elf, i, &sh) || !links_are_valid(elf, &sh))
+        if (!read_shdr(elf, i, &sh) || (i > 0 && !links_are_valid(elf, &sh)))
             return (0);
         if (sh.sh_type != SHT_NOBITS && !elf_ptr(elf, sh.sh_offset, sh.sh_size))
             elf->warnings |= W_PAST_EOF;
@@ -255,6 +256,25 @@ static int  pick_symtab(t_elf *elf, const Elf64_Shdr *sh, uint64_t i)
 }
 
 /*
+    It returns 0 on invalid
+*/
+static int  check_type(const t_elf *elf, const Elf64_Shdr *sh)
+{
+    if (sh->sh_type == SHT_REL)
+        return (sh->sh_entsize == (elf->is_64 ? sizeof(Elf64_Rel) : sizeof(Elf32_Rel)));
+    if (sh->sh_type == SHT_RELA)
+        return (sh->sh_entsize == (elf->is_64 ? sizeof(Elf64_Rela) : sizeof(Elf32_Rela)));
+    if (sh->sh_type == SHT_GNU_versym)
+        return (sh->sh_entsize == 2);
+    if (sh->sh_type == SHT_DYNSYM)
+        return (sh->sh_entsize == sym_size(elf)
+            && (sh->sh_size == 0 || sh->sh_info * sh->sh_entsize <= sh->sh_size));
+    if (sh->sh_type == SHT_NOTE)
+        return (sh->sh_size == 0 || elf_ptr(elf, sh->sh_offset, sh->sh_size) != NULL);
+    return (1);
+}
+
+/*
     The name must resolve, then the first SHT_SYMTAB wins.
     It returns 0 on invalid
 */
@@ -269,6 +289,8 @@ static int  scan_sections(t_elf *elf, const Elf64_Shdr *shstrtab)
         if (!read_shdr(elf, i, &sh) || !elf_str(elf, shstrtab, sh.sh_name))
             return (0);
         if (sh.sh_type == SHT_SYMTAB && !pick_symtab(elf, &sh, i))
+            return (0);
+        if (!check_type(elf, &sh))
             return (0);
         i++;
     }
